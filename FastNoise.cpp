@@ -401,6 +401,8 @@ FN_DECIMAL FastNoise::GetNoise(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z) const
 			return SingleCubicFractalBillow(x, y, z);
 		case RigidMulti:
 			return SingleCubicFractalRigidMulti(x, y, z);
+		default:
+			return 0;
 		}
 	default:
 		return 0;
@@ -425,6 +427,8 @@ FN_DECIMAL FastNoise::GetNoise(FN_DECIMAL x, FN_DECIMAL y) const
 			return SingleValueFractalBillow(x, y);
 		case RigidMulti:
 			return SingleValueFractalRigidMulti(x, y);
+		default:
+			return 0;
 		}
 	case Perlin:
 		return SinglePerlin(0, x, y);
@@ -437,6 +441,8 @@ FN_DECIMAL FastNoise::GetNoise(FN_DECIMAL x, FN_DECIMAL y) const
 			return SinglePerlinFractalBillow(x, y);
 		case RigidMulti:
 			return SinglePerlinFractalRigidMulti(x, y);
+		default:
+			return 0;
 		}
 	case Simplex:
 		return SingleSimplex(0, x, y);
@@ -449,6 +455,8 @@ FN_DECIMAL FastNoise::GetNoise(FN_DECIMAL x, FN_DECIMAL y) const
 			return SingleSimplexFractalBillow(x, y);
 		case RigidMulti:
 			return SingleSimplexFractalRigidMulti(x, y);
+		default:
+			return 0;
 		}
 	case Cellular:
 		switch (m_cellularReturnType)
@@ -469,38 +477,61 @@ FN_DECIMAL FastNoise::GetNoise(FN_DECIMAL x, FN_DECIMAL y) const
 		{
 		case FBM:
 			return SingleCubicFractalFBM(x, y);
-		case Billow:	 
+		case Billow:
 			return SingleCubicFractalBillow(x, y);
-		case RigidMulti: 
+		case RigidMulti:
 			return SingleCubicFractalRigidMulti(x, y);
+		default:
+			return 0;
 		}
 	}
 	return 0;
 }
 
+union floatint
+{
+   float f;
+   int i;
+};
+
 // White Noise
 FN_DECIMAL FastNoise::GetWhiteNoise(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z, FN_DECIMAL w) const
 {
+	floatint xx, yy, zz, ww;
+	xx.f = x;
+	yy.f = y;
+	zz.f = z;
+	ww.f = w;
+
 	return ValCoord4D(m_seed,
-		*reinterpret_cast<int*>(&x) ^ (*reinterpret_cast<int*>(&x) >> 16),
-		*reinterpret_cast<int*>(&y) ^ (*reinterpret_cast<int*>(&y) >> 16),
-		*reinterpret_cast<int*>(&z) ^ (*reinterpret_cast<int*>(&z) >> 16),
-		*reinterpret_cast<int*>(&w) ^ (*reinterpret_cast<int*>(&w) >> 16));
+		xx.i ^ (xx.i >> 16),
+		yy.i ^ (yy.i >> 16),
+		zz.i ^ (zz.i >> 16),
+		ww.i ^ (ww.i >> 16));
 }
 
 FN_DECIMAL FastNoise::GetWhiteNoise(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z) const
 {
+	floatint xx, yy, zz;
+	xx.f = x;
+	yy.f = y;
+	zz.f = z;
+
 	return ValCoord3D(m_seed,
-		*reinterpret_cast<int*>(&x) ^ (*reinterpret_cast<int*>(&x) >> 16),
-		*reinterpret_cast<int*>(&y) ^ (*reinterpret_cast<int*>(&y) >> 16),
-		*reinterpret_cast<int*>(&z) ^ (*reinterpret_cast<int*>(&z) >> 16));
+		xx.i ^ (xx.i >> 16),
+		yy.i ^ (yy.i >> 16),
+		zz.i ^ (zz.i >> 16));
 }
 
 FN_DECIMAL FastNoise::GetWhiteNoise(FN_DECIMAL x, FN_DECIMAL y) const
 {
+	floatint xx, yy;
+	xx.f = x;
+	yy.f = y;
+
 	return ValCoord2D(m_seed,
-		*reinterpret_cast<int*>(&x) ^ (*reinterpret_cast<int*>(&x) >> 16),
-		*reinterpret_cast<int*>(&y) ^ (*reinterpret_cast<int*>(&y) >> 16));
+		xx.i ^ (xx.i >> 16),
+		yy.i ^ (yy.i >> 16));
 }
 
 FN_DECIMAL FastNoise::GetWhiteNoiseInt(int x, int y, int z, int w) const
@@ -1444,9 +1475,9 @@ FN_DECIMAL FastNoise::GetCubicFractal(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z) 
 	{
 	case FBM:
 		return SingleCubicFractalFBM(x, y, z);
-	case Billow:	 
+	case Billow:
 		return SingleCubicFractalBillow(x, y, z);
-	case RigidMulti: 
+	case RigidMulti:
 		return SingleCubicFractalRigidMulti(x, y, z);
 	default:
 		return 0;
@@ -1575,9 +1606,9 @@ FN_DECIMAL FastNoise::GetCubicFractal(FN_DECIMAL x, FN_DECIMAL y) const
 	{
 	case FBM:
 		return SingleCubicFractalFBM(x, y);
-	case Billow:	 
+	case Billow:
 		return SingleCubicFractalBillow(x, y);
-	case RigidMulti: 
+	case RigidMulti:
 		return SingleCubicFractalRigidMulti(x, y);
 	default:
 		return 0;
@@ -1828,7 +1859,7 @@ FN_DECIMAL FastNoise::SingleCellular2Edge(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL
 
 					for (int i = m_cellularDistanceIndex1; i > 0; i--)
 						distance[i] = fmax(fmin(distance[i], newDistance), distance[i - 1]);
-					distance[0] = fmin(distance[0], newDistance); 
+					distance[0] = fmin(distance[0], newDistance);
 				}
 			}
 		}
@@ -1934,7 +1965,7 @@ FN_DECIMAL FastNoise::SingleCellular(FN_DECIMAL x, FN_DECIMAL y) const
 
 				FN_DECIMAL vecX = xi - x + CELL_2D_X[lutPos] * m_cellularJitter;
 				FN_DECIMAL vecY = yi - y + CELL_2D_Y[lutPos] * m_cellularJitter;
-															
+
 				FN_DECIMAL newDistance = vecX * vecX + vecY * vecY;
 
 				if (newDistance < distance)
